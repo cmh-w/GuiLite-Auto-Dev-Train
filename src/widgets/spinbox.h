@@ -12,6 +12,7 @@
 #define ID_BT_ARROW_DOWN    	0x2222
 
 class c_spin_box;
+// 微调按钮控件：上下箭头按钮
 class c_spin_button : public c_button
 {
 	friend class c_spin_box;
@@ -19,6 +20,7 @@ class c_spin_button : public c_button
 	c_spin_box* m_spin_box;
 };
 
+// 微调框控件：支持数值增减调节
 class c_spin_box : public c_wnd
 {
 	friend class c_spin_button;
@@ -34,6 +36,7 @@ public:
 	short get_value_digit() { return m_digit; }
 	void set_on_change(WND_CALLBACK on_change) { this->on_change = on_change; }
 protected:
+	// 绘制数值显示区域
 	virtual void on_paint()
 	{
 		c_rect rect;
@@ -43,6 +46,7 @@ protected:
 		m_surface->fill_rect(rect, c_theme::get_color(COLOR_WND_NORMAL), m_z_order);
 		c_word::draw_value_in_rect(m_surface, m_parent->get_z_order(), m_cur_value, m_digit, rect, m_font, m_font_color, c_theme::get_color(COLOR_WND_NORMAL), ALIGN_HCENTER | ALIGN_VCENTER);
 	}
+	// 微调框预创建：初始化数值范围和箭头按钮
 	virtual void pre_create_wnd()
 	{
 		m_attr = (WND_ATTRIBUTION)(ATTR_VISIBLE);
@@ -60,6 +64,7 @@ protected:
 		m_bt_up.connect(m_parent, ID_BT_ARROW_UP, "+", (rect.m_left + rect.width() * 2 / 3), rect.m_top, (rect.width() / 3), (rect.height() / 2));
 		m_bt_down.connect(m_parent, ID_BT_ARROW_DOWN, "-", (rect.m_left + rect.width() * 2 / 3), (rect.m_top + rect.height() / 2), (rect.width() / 3), (rect.height() / 2));
 	}
+	// 处理向上按钮点击：增加值
 	void on_arrow_up_bt_click()
 	{
 		if (m_cur_value + m_step > m_max)
@@ -73,6 +78,7 @@ protected:
 		}
 		on_paint();
 	}
+	// 处理向下按钮点击：减少值
 	void on_arrow_down_bt_click()
 	{
 		if (m_cur_value - m_step < m_min)
@@ -98,6 +104,7 @@ protected:
 	WND_CALLBACK 	on_change;
 };
 
+// 处理微调按钮触摸：触发对应增减操作
 inline void c_spin_button::on_touch(int x, int y, TOUCH_ACTION action)
 {
 	if (action == TOUCH_UP)

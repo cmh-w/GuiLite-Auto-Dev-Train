@@ -7,9 +7,11 @@
 #include "../core/theme.h"
 #include "../core/word.h"
 
+// 标签控件：用于显示静态文本
 class c_label : public c_wnd
 {
 public:
+	// 绘制标签文本
 	virtual void on_paint()
 	{
 		c_rect rect;
@@ -22,6 +24,7 @@ public:
 		}
 	}
 protected:
+	// 标签预创建：设置可见属性
 	virtual void pre_create_wnd()
 	{
 		m_attr = ATTR_VISIBLE;

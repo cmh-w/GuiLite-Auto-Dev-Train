@@ -18,6 +18,7 @@
 #define	WAVE_LINE_WIDTH			1
 #define	WAVE_MARGIN				5
 
+// 波形绘制模式枚举：填充模式/扫描模式
 typedef enum
 {
 	FILL_MODE,
@@ -25,9 +26,11 @@ typedef enum
 }E_WAVE_DRAW_MODE;
 
 class c_wave_buffer;
+// 波形控件：实时显示波形数据
 class c_wave_ctrl : public c_wnd
 {
 public:
+	// 构造函数：初始化波形参数和颜色
 	c_wave_ctrl()
 	{
 		m_wave = 0;
@@ -44,6 +47,7 @@ public:
 		m_wave_name_color = m_wave_unit_color = m_wave_color = GL_RGB(255, 0, 0);
 		m_back_color = GL_RGB(0, 0, 0);
 	}
+	// 初始化子控件：计算波形区域并分配背景缓冲区
 	virtual void on_init_children()//should be pre_create
 	{
 		c_rect rect;
@@ -57,6 +61,7 @@ public:
 
 		m_bg_fb = (unsigned int*)calloc(rect.width() * rect.height(), 4);
 	}
+	// 绘制波形背景、名称和单位
 	virtual void on_paint()
 	{
 		c_rect rect;
@@ -79,6 +84,7 @@ public:
 	void set_wave_name_color(unsigned int wave_name_color){ m_wave_name_color = wave_name_color;}
 	void set_wave_unit_color(unsigned int wave_unit_color){ m_wave_unit_color = wave_unit_color;}
 	void set_wave_color(unsigned int color){ m_wave_color = color;}
+	// 设置波形数据输入输出速率
 	void set_wave_in_out_rate(unsigned int data_rate, unsigned int refresh_rate)
 	{
 		m_wave_data_rate = data_rate;
@@ -92,11 +98,13 @@ public:
 		}
 		m_frame_len_map_index = 0;
 	}
+	// 设置波形滚动速度
 	void set_wave_speed(unsigned int speed)
 	{
 		m_wave_speed = speed;
 		set_wave_in_out_rate(m_wave_data_rate, m_wave_refresh_rate);
 	}
+	// 设置波形数据最大最小值范围
 	void set_max_min(short max_data, short min_data)
 	{
 		m_max_data = max_data;
@@ -104,6 +112,7 @@ public:
 	}
 	void set_wave(c_wave_buffer* wave){m_wave = wave;}
 	c_wave_buffer* get_wave(){return m_wave;}
+	// 清除波形数据
 	void clear_data()
 	{
 		if (m_wave == 0)
@@ -113,6 +122,7 @@ public:
 		}
 		m_wave->clear_data();
 	}
+	// 检查是否有足够数据用于刷新
 	bool is_data_enough()
 	{
 		if (m_wave == 0)
@@ -122,6 +132,7 @@ public:
 		}
 		return (m_wave->get_cnt() - m_frame_len_map[m_frame_len_map_index] * m_wave_speed);
 	}
+	// 刷新波形显示：读取数据并绘制到屏幕
 	void refresh_wave(unsigned char frame)
 	{
 		if (m_wave == 0)
@@ -162,12 +173,14 @@ public:
 			m_wave_cursor++;
 		}
 	}
+	// 清除波形画面，重置光标
 	void clear_wave()
 	{
 		m_surface->fill_rect(m_wave_left, m_wave_top, m_wave_right, m_wave_bottom, m_back_color, m_z_order);
 		m_wave_cursor = m_wave_left;
 	}	
 protected:
+	// 绘制平滑垂直线段
 	void draw_smooth_vline(int y_min, int y_max, int mid, unsigned int rgb)
 	{
 		int dy = y_max - y_min;
@@ -208,6 +221,7 @@ protected:
 			}
 		}
 	}
+	// 恢复波形光标后的背景
 	void restore_background()
 	{
 		int  x = m_wave_cursor + WAVE_CURSOR_WIDTH;
@@ -226,6 +240,7 @@ protected:
 			(m_bg_fb) ? m_surface->draw_pixel(x, y_pos, m_bg_fb[(y_pos - top) * width + (x - left)], m_z_order) : m_surface->draw_pixel(x, y_pos, 0, m_z_order);
 		}
 	}
+	// 保存波形区域的背景像素
 	void save_background()
 	{
 		if (!m_bg_fb)

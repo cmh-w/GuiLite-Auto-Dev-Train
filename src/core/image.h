@@ -7,16 +7,21 @@
 #define	DEFAULT_MASK_COLOR 0xFF080408
 class c_surface;
 
+// 图像操作抽象基类
 class c_image_operator
 {
 public:
+	// 绘制图像
 	virtual void draw_image(c_surface* surface, int z_order, const void* image_info, int x, int y, unsigned int mask_rgb = DEFAULT_MASK_COLOR) = 0;
+	// 绘制图像（支持裁剪区域）
 	virtual void draw_image(c_surface* surface, int z_order, const void* image_info, int x, int y, int src_x, int src_y, int width, int height, unsigned int mask_rgb = DEFAULT_MASK_COLOR) = 0;
 };
 
+// 位图操作实现类
 class c_bitmap_operator : public c_image_operator
 {
 public:
+	// 绘制图像
 	virtual void draw_image(c_surface* surface, int z_order, const void* image_info, int x, int y, unsigned int mask_rgb = DEFAULT_MASK_COLOR)
 	{
 		ASSERT(image_info);
@@ -57,6 +62,7 @@ public:
 		}
 	}
 
+	// 绘制图像（支持裁剪区域）
 	virtual void draw_image(c_surface* surface, int z_order, const void* image_info, int x, int y, int src_x, int src_y, int width, int height, unsigned int mask_rgb = DEFAULT_MASK_COLOR)
 	{
 		ASSERT(image_info);
@@ -102,14 +108,17 @@ public:
 	}
 };
 
+// 图像渲染静态接口类
 class c_image
 {
 public:
+	// 绘制图像
 	static void draw_image(c_surface* surface, int z_order, const void* image_info, int x, int y, unsigned int mask_rgb = DEFAULT_MASK_COLOR)
 	{
 		image_operator->draw_image(surface, z_order, image_info, x, y, mask_rgb);
 	}
 
+	// 绘制图像（支持裁剪区域）
 	static void draw_image(c_surface* surface, int z_order, const void* image_info, int x, int y, int src_x, int src_y, int width, int height, unsigned int mask_rgb = DEFAULT_MASK_COLOR)
 	{
 		image_operator->draw_image(surface, z_order, image_info, x, y, src_x, src_y, width, height, mask_rgb);

@@ -7,6 +7,7 @@
 
 #define SURFACE_CNT_MAX	6//root + pages
 
+// Z轴顺序层级枚举
 typedef enum
 {
 	Z_ORDER_LEVEL_0,//lowest graphic level
@@ -15,6 +16,7 @@ typedef enum
 	Z_ORDER_LEVEL_MAX
 }Z_ORDER_LEVEL;
 
+// 显示驱动结构体：定义像素绘制和矩形填充的函数指针
 struct DISPLAY_DRIVER
 {
 	void(*draw_pixel)(int x, int y, unsigned int rgb);
@@ -22,17 +24,23 @@ struct DISPLAY_DRIVER
 };
 
 class c_surface;
+// 显示驱动类：管理物理帧缓冲和多surface调度
 class c_display {
 	friend class c_surface;
 public:
+	// 构造函数：单自定义surface模式
 	inline c_display(void* phy_fb, int display_width, int display_height, c_surface* surface, DISPLAY_DRIVER* driver = 0);//single custom surface
+	// 构造函数：多surface模式
 	inline c_display(void* phy_fb, int display_width, int display_height, int surface_width, int surface_height, unsigned int color_bytes, int surface_cnt, DISPLAY_DRIVER* driver = 0);//multiple surface
+	// 分配surface：用于滑动组
 	inline c_surface* alloc_surface(Z_ORDER_LEVEL max_zorder, c_rect layer_rect = c_rect());//for slide group
+	// 切换surface动画
 	inline int swipe_surface(c_surface* s0, c_surface* s1, int x0, int x1, int y0, int y1, int offset);
 	int get_width() { return m_width; }
 	int get_height() { return m_height; }
 	void* get_phy_fb() { return m_phy_fb; }
 
+	// 获取更新后的帧缓冲数据
 	void* get_updated_fb(int* width, int* height, bool force_update = false)
 	{
 		if (width && height)
@@ -52,6 +60,7 @@ public:
 		return m_phy_fb;
 	}
 
+	// 截屏保存为BMP文件
 	int snap_shot(const char* file_name)
 	{
 		if (!m_phy_fb || (m_color_bytes !=2 && m_color_bytes != 4))
@@ -81,6 +90,7 @@ public:
 	}
 
 protected:
+	// 绘制像素点到物理帧缓冲
 	virtual void draw_pixel(int x, int y, unsigned int rgb)
 	{
 		if ((x >= m_width) || (y >= m_height)) { return; }
@@ -100,6 +110,7 @@ protected:
 		}
 	}
 
+	// 填充矩形区域到物理帧缓冲
 	virtual void fill_rect(int x0, int y0, int x1, int y1, unsigned int rgb)
 	{
 		if (m_driver && m_driver->fill_rect)
@@ -155,6 +166,7 @@ protected:
 		}
 	}
 
+	// 刷新屏幕区域
 	virtual int flush_screen(int left, int top, int right, int bottom, void* fb, int fb_width)
 	{
 		if ((0 == m_phy_fb) || (0 == fb))
@@ -193,6 +205,7 @@ protected:
 	
 };
 
+// 图层类：管理单个图层的帧缓冲和活动区域
 class c_layer
 {
 public:
@@ -202,16 +215,19 @@ public:
 	c_rect active_rect;
 };
 
+// 表面类：管理图形表面及其多图层渲染
 class c_surface {
 	friend class c_display; friend class c_bitmap_operator;
 public:
 	Z_ORDER_LEVEL get_max_z_order() { return m_max_zorder; }
 
+	// 构造函数：创建指定尺寸和颜色深度的surface
 	c_surface(unsigned int width, unsigned int height, unsigned int color_bytes, Z_ORDER_LEVEL max_zorder = Z_ORDER_LEVEL_0, c_rect overlpa_rect = c_rect()) : m_width(width), m_height(height), m_color_bytes(color_bytes), m_fb(0), m_is_active(false), m_top_zorder(Z_ORDER_LEVEL_0), m_phy_write_index(0), m_display(0)
 	{
 		(overlpa_rect == c_rect()) ? set_surface(max_zorder, c_rect(0, 0, width, height)) : set_surface(max_zorder, overlpa_rect);
 	}
 
+	// 获取指定位置的像素颜色
 	unsigned int get_pixel(int x, int y, unsigned int z_order)
 	{
 		if (x >= m_width || y >= m_height || x < 0 || y < 0 || z_order >= Z_ORDER_LEVEL_MAX)
@@ -234,6 +250,7 @@ public:
 		return 0;
 	}
 
+	// 在指定图层绘制像素点
 	virtual void draw_pixel(int x, int y, unsigned int rgb, unsigned int z_order)
 	{
 		if (x >= m_width || y >= m_height || x < 0 || y < 0)
@@ -291,6 +308,7 @@ public:
 		}
 	}
 
+	// 在指定图层填充矩形区域
 	virtual void fill_rect(int x0, int y0, int x1, int y1, unsigned int rgb, unsigned int z_order)
 	{
 		x0 = (x0 < 0) ? 0 : x0;
@@ -334,6 +352,7 @@ public:
 		}
 	}
 
+	// 绘制水平线
 	void draw_hline(int x0, int x1, int y, unsigned int rgb, unsigned int z_order)
 	{
 		for (; x0 <= x1; x0++)
@@ -342,6 +361,7 @@ public:
 		}
 	}
 
+	// 绘制垂直线
 	void draw_vline(int x, int y0, int y1, unsigned int rgb, unsigned int z_order)
 	{
 		for (; y0 <= y1; y0++)
@@ -350,6 +370,7 @@ public:
 		}
 	}
 
+	// 绘制直线（Bresenham算法）
 	void draw_line(int x1, int y1, int x2, int y2, unsigned int rgb, unsigned int z_order)
 	{
 		int dx, dy, x, y, e;
@@ -385,6 +406,7 @@ public:
 		}
 	}
 
+	// 绘制矩形边框
 	void draw_rect(int x0, int y0, int x1, int y1, unsigned int rgb, unsigned int z_order, unsigned int size = 1)
 	{
 		for (unsigned int offset = 0; offset < size; offset++)
@@ -396,16 +418,19 @@ public:
 		}
 	}
 
+	// 绘制矩形边框（使用c_rect）
 	void draw_rect(c_rect rect, unsigned int rgb, unsigned int size, unsigned int z_order)
 	{
 		draw_rect(rect.m_left, rect.m_top, rect.m_right, rect.m_bottom, rgb, z_order, size);
 	}
 
+	// 填充矩形区域（使用c_rect）
 	void fill_rect(c_rect rect, unsigned int rgb, unsigned int z_order)
 	{
 		fill_rect(rect.m_left, rect.m_top, rect.m_right, rect.m_bottom, rgb, z_order);
 	}
 
+	// 刷新surface到显示
 	int flush_screen(int left, int top, int right, int bottom)
 	{
 		if (!m_is_active)
@@ -427,6 +452,7 @@ public:
 	bool is_active() { return m_is_active; }
 	c_display* get_display() { return m_display; }
 
+	// 激活指定图层
 	void activate_layer(c_rect active_rect, unsigned int active_z_order)//empty active rect means inactivating the layer
 	{
 		ASSERT(active_z_order > Z_ORDER_LEVEL_0 && active_z_order <= Z_ORDER_LEVEL_MAX);
@@ -456,6 +482,7 @@ public:
 
 	void set_active(bool flag) { m_is_active = flag; }
 protected:
+	// 低级填充矩形：直接操作surface帧缓冲
 	virtual void fill_rect_low_level(int x0, int y0, int x1, int y1, unsigned int rgb)
 	{//fill rect on framebuffer of surface
 		int x, y;
@@ -492,6 +519,7 @@ protected:
 		*m_phy_write_index = *m_phy_write_index + 1;
 	}
 
+	// 低级绘制像素：直接操作surface帧缓冲
 	virtual void draw_pixel_low_level(int x, int y, unsigned int rgb)
 	{
 		if (m_fb)
@@ -503,6 +531,7 @@ protected:
 		*m_phy_write_index = *m_phy_write_index + 1;
 	}
 
+	// 关联显示驱动
 	void attach_display(c_display* display)
 	{
 		ASSERT(display);
@@ -510,6 +539,7 @@ protected:
 		m_phy_write_index = &display->m_phy_write_index;
 	}
 
+	// 设置surface的图层配置
 	void set_surface(Z_ORDER_LEVEL max_z_order, c_rect layer_rect)
 	{
 		m_max_zorder = max_z_order;
@@ -539,6 +569,7 @@ protected:
 	c_display*		m_display;
 };
 
+// 构造函数实现：单自定义surface模式
 inline c_display::c_display(void* phy_fb, int display_width, int display_height, c_surface* surface, DISPLAY_DRIVER* driver) : m_phy_fb(phy_fb), m_width(display_width), m_height(display_height), m_driver(driver), m_phy_read_index(0), m_phy_write_index(0), m_surface_cnt(1), m_surface_index(0)
 {
 	m_color_bytes = surface->m_color_bytes;
@@ -546,6 +577,7 @@ inline c_display::c_display(void* phy_fb, int display_width, int display_height,
 	(m_surface_group[0] = surface)->attach_display(this);
 }
 
+// 构造函数实现：多surface模式
 inline c_display::c_display(void* phy_fb, int display_width, int display_height, int surface_width, int surface_height, unsigned int color_bytes, int surface_cnt, DISPLAY_DRIVER* driver) : m_phy_fb(phy_fb), m_width(display_width), m_height(display_height), m_color_bytes(color_bytes), m_phy_read_index(0), m_phy_write_index(0), m_surface_cnt(surface_cnt), m_driver(driver), m_surface_index(0)
 {
 	ASSERT(color_bytes == 2 || color_bytes == 4);
@@ -559,6 +591,7 @@ inline c_display::c_display(void* phy_fb, int display_width, int display_height,
 	}
 }
 
+// 分配surface实现：用于滑动组
 inline c_surface* c_display::alloc_surface(Z_ORDER_LEVEL max_zorder, c_rect layer_rect)
 {
 	ASSERT(max_zorder < Z_ORDER_LEVEL_MAX && m_surface_index < m_surface_cnt);
@@ -566,6 +599,7 @@ inline c_surface* c_display::alloc_surface(Z_ORDER_LEVEL max_zorder, c_rect laye
 	return m_surface_group[m_surface_index++];
 }
 
+// 切换surface动画实现
 inline int c_display::swipe_surface(c_surface* s0, c_surface* s1, int x0, int x1, int y0, int y1, int offset)
 {
 	int surface_width = s0->m_width;

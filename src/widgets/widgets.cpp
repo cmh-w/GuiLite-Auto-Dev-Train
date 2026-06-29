@@ -8,7 +8,169 @@
 #include "../widgets/table.h"
 #include "../widgets/wave_buffer.h"
 #include "../widgets/wave_ctrl.h"
+#include "../widgets/wave_stat.h"
 #include "../widgets/edit.h"
+#include "../widgets/progress_bar.h"
+
+void c_progress_bar::pre_create_wnd()
+{
+	m_attr = ATTR_VISIBLE;
+	m_value = 0;
+	m_bar_color = c_theme::get_color(COLOR_WND_FOCUS);
+	m_font = c_theme::get_font(FONT_DEFAULT);
+	m_font_color = c_theme::get_color(COLOR_WND_FONT);
+}
+
+void c_progress_bar::on_paint()
+{
+	c_rect rect;
+	get_screen_rect(rect);
+
+	int fill_w = rect.width() * m_value / 100;
+
+	m_surface->fill_rect(rect, c_theme::get_color(COLOR_WND_NORMAL), m_z_order);
+
+	if (fill_w > 0)
+	{
+		m_surface->fill_rect(rect.m_left, rect.m_top, rect.m_left + fill_w - 1, rect.m_bottom, m_bar_color, m_z_order);
+	}
+
+	m_surface->draw_rect(rect, c_theme::get_color(COLOR_WND_BORDER), 1, m_z_order);
+
+	char buf[8];
+	sprintf(buf, "%d%%", m_value);
+	c_word::draw_string_in_rect(m_surface, m_z_order, buf, rect, m_font, m_font_color, 0, ALIGN_HCENTER | ALIGN_VCENTER);
+}
+
+void c_progress_bar::set_value(int value)
+{
+	if (value < 0) { value = 0; }
+	if (value > 100) { value = 100; }
+	if (m_value != value)
+	{
+		m_value = value;
+		on_paint();
+	}
+}
+
+void c_wave_stat::pre_create_wnd()
+{
+	m_attr = ATTR_VISIBLE;
+	m_wave_name = 0;
+	m_wave_color = GL_RGB(0, 255, 0);
+	m_font = c_theme::get_font(FONT_DEFAULT);
+	m_font_color = c_theme::get_color(COLOR_WND_FONT);
+	m_sample_cnt = 0;
+	m_min_val = m_max_val = m_avg_val = m_pp_val = 0;
+	memset(m_data, 0, sizeof(m_data));
+}
+
+void c_wave_stat::add_data(short value)
+{
+	if (m_sample_cnt >= WAVE_STAT_MAX_DATA)
+	{
+		return;
+	}
+	m_data[m_sample_cnt++] = value;
+}
+
+void c_wave_stat::clear_data()
+{
+	m_sample_cnt = 0;
+	m_min_val = m_max_val = m_avg_val = m_pp_val = 0;
+	memset(m_data, 0, sizeof(m_data));
+}
+
+void c_wave_stat::calc_statistics()
+{
+	if (m_sample_cnt <= 0)
+	{
+		m_min_val = m_max_val = m_avg_val = m_pp_val = 0;
+		return;
+	}
+
+	int sum = 0;
+	m_min_val = m_data[0];
+	m_max_val = m_data[0];
+
+	for (int i = 0; i < m_sample_cnt; i++)
+	{
+		short val = m_data[i];
+		sum += val;
+		if (val < m_min_val) { m_min_val = val; }
+		if (val > m_max_val) { m_max_val = val; }
+	}
+
+	m_avg_val = (m_sample_cnt > 0) ? (sum / m_sample_cnt) : 0;
+	m_pp_val = m_max_val - m_min_val;
+}
+
+void c_wave_stat::refresh()
+{
+	calc_statistics();
+	on_paint();
+}
+
+void c_wave_stat::on_paint()
+{
+	c_rect rect;
+	get_screen_rect(rect);
+
+	int margin = 5;
+	int x = rect.m_left + margin;
+	int y = rect.m_top + margin;
+	int w = rect.width() - margin * 2;
+	int h = rect.height() - margin * 2;
+
+	m_surface->fill_rect(rect, GL_RGB(0, 0, 0), m_z_order);
+
+	if (m_wave_name)
+	{
+		c_word::draw_string(m_surface, m_z_order, m_wave_name, x, y, m_font, m_wave_color, 0);
+	}
+
+	if (m_sample_cnt <= 0)
+	{
+		c_word::draw_string(m_surface, m_z_order, "No data", x, y + 20, m_font, GL_RGB(128, 128, 128), 0);
+		return;
+	}
+
+	int stat_y = y + 20;
+	int bar_top = stat_y;
+	int bar_bottom = stat_y + 30;
+
+	m_surface->fill_rect(x, bar_top, x + w - 1, bar_bottom, GL_RGB(20, 20, 20), m_z_order);
+
+	if (m_pp_val > 0)
+	{
+		int range = m_pp_val;
+		int avg_y = bar_bottom - (bar_bottom - bar_top) * (m_avg_val - m_min_val) / range;
+
+		m_surface->fill_rect(x, bar_top, x + w - 1, bar_bottom, GL_RGB(0, 40, 0), m_z_order);
+
+		if (avg_y >= bar_top && avg_y <= bar_bottom)
+		{
+			m_surface->fill_rect(x, avg_y - 1, x + w - 1, avg_y + 1, m_wave_color, m_z_order);
+		}
+
+		m_surface->draw_pixel(x, bar_top, GL_RGB(255, 80, 80), m_z_order);
+		m_surface->draw_pixel(x, bar_bottom, GL_RGB(80, 80, 255), m_z_order);
+		m_surface->draw_rect(x - 1, bar_top - 1, x + w, bar_bottom + 1, GL_RGB(60, 60, 60), 1, m_z_order);
+	}
+
+	int text_y = bar_bottom + 8;
+	char buf[32];
+	sprintf(buf, "Avg:%d", m_avg_val);
+	c_word::draw_string(m_surface, m_z_order, buf, x, text_y, m_font, m_wave_color, 0);
+	sprintf(buf, "Min:%d", m_min_val);
+	c_word::draw_string(m_surface, m_z_order, buf, x + w / 2, text_y, m_font, GL_RGB(255, 80, 80), 0);
+	sprintf(buf, "Max:%d", m_max_val);
+	c_word::draw_string(m_surface, m_z_order, buf, x, text_y + 16, m_font, GL_RGB(80, 255, 80), 0);
+	sprintf(buf, "P-P:%d", m_pp_val);
+	c_word::draw_string(m_surface, m_z_order, buf, x + w / 2, text_y + 16, m_font, GL_RGB(255, 255, 80), 0);
+	sprintf(buf, "Cnt:%d", m_sample_cnt);
+	c_word::draw_string(m_surface, m_z_order, buf, x + w / 2, text_y + 32, m_font, GL_RGB(160, 160, 160), 0);
+}
 
 #ifdef GUILITE_ON
 DIALOG_ARRAY c_dialog::ms_the_dialogs[SURFACE_CNT_MAX];
@@ -20,6 +182,7 @@ static c_keyboard_button s_key_K, s_key_L, s_key_M, s_key_N, s_key_O, s_key_P, s
 static c_keyboard_button s_key_U, s_key_V, s_key_W, s_key_X, s_key_Y, s_key_Z;
 static c_keyboard_button s_key_dot, s_key_caps, s_key_space, s_key_enter, s_key_del, s_key_esc, s_key_num_switch;
 
+// 键盘布局：字母键盘子窗口配置表
 WND_TREE g_key_board_children[] =
 {
 	//Row 1
@@ -62,6 +225,7 @@ WND_TREE g_key_board_children[] =
 	{0,0,0,0,0,0,0}
 };
 
+// 键盘布局：数字键盘子窗口配置表
 WND_TREE g_number_board_children[] =
 {
 	{&s_key_1,	'1',	0, POS_X(0), POS_Y(0), KEY_WIDTH, KEY_HEIGHT},

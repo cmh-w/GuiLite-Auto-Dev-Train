@@ -13,6 +13,7 @@
 
 #define MAX_EDIT_STRLEN		32
 #define IDD_KEY_BOARD		0x1
+// 编辑框控件：支持键盘输入和文本显示
 class c_edit : public c_wnd
 {
 	friend class c_keyboard;
@@ -28,6 +29,7 @@ public:
 	void set_keyboard_style(KEYBOARD_STYLE kb_sytle) { m_kb_style = kb_sytle; }
 	
 protected:
+	// 编辑框预创建：初始化属性和键盘布局
 	virtual void pre_create_wnd()
 	{
 		m_attr = (WND_ATTRIBUTION)(ATTR_VISIBLE | ATTR_FOCUS);
@@ -39,6 +41,7 @@ protected:
 		memset(m_str, 0, sizeof(m_str));
 		set_text(c_wnd::m_str);
 	}
+	// 绘制编辑框：根据状态切换视觉效果
 	virtual void on_paint()
 	{
 		c_rect rect, kb_rect;
@@ -79,16 +82,19 @@ protected:
 			ASSERT(false);
 		}
 	}
+	// 处理获得焦点事件
 	virtual void on_focus()
 	{
 		m_status = STATUS_FOCUSED;
 		on_paint();
 	}
+	// 处理失去焦点事件
 	virtual void on_kill_focus()
 	{
 		m_status = STATUS_NORMAL;
 		on_paint();
 	}
+	// 处理导航按键事件
 	virtual void on_navigate(NAVIGATION_KEY key)
 	{
 		switch (key)
@@ -101,10 +107,12 @@ protected:
 			return (m_status == STATUS_PUSHED) ? s_keyboard.on_navigate(key) : c_wnd::on_navigate(key);
 		}
 	}
+	// 处理触摸事件
 	virtual void on_touch(int x, int y, TOUCH_ACTION action)
 	{
 		(action == TOUCH_DOWN) ? on_touch_down(x, y) : on_touch_up(x, y);
 	}	
+	// 处理键盘点击回调：字符/确认/取消
 	void on_key_board_click(int id, int param)
 	{
 		switch (param)
@@ -132,6 +140,7 @@ protected:
 		}
 	}
 private:
+	// 处理触摸按下：判断是否在编辑框或键盘区域
 	void on_touch_down(int x, int y)
 	{
 		c_rect kb_rect_relate_2_edit_parent;
@@ -161,6 +170,7 @@ private:
 			}
 		}
 	}
+	// 处理触摸抬起：切换编辑框状态
 	void on_touch_up(int x, int y)
 	{
 		if (STATUS_FOCUSED == m_status)

@@ -4,6 +4,7 @@
 #include "../core/resource.h"
 
 //Rebuild gui library once you change this file
+// 字体列表枚举
 enum FONT_LIST
 {
 	FONT_NULL,
@@ -18,6 +19,7 @@ enum FONT_LIST
 	FONT_MAX
 };
 
+// 图片列表枚举
 enum IMAGE_LIST
 {
 	IMAGE_CUSTOM1,
@@ -30,6 +32,7 @@ enum IMAGE_LIST
 	IMAGE_MAX
 };
 
+// 颜色列表枚举
 enum COLOR_LIST
 {
 	COLOR_WND_FONT,
@@ -48,9 +51,11 @@ enum COLOR_LIST
 	COLOR_MAX
 };
 
+// 主题管理类：管理字体、图片和颜色的全局配置
 class c_theme
 {
 public:
+	// 添加字体到主题
 	static int add_font(FONT_LIST index, const void* font)
 	{
 		if (index >= FONT_MAX)
@@ -62,6 +67,7 @@ public:
 		return 0;
 	}
 
+	// 获取主题中指定字体
 	static const void* get_font(FONT_LIST index)
 	{
 		if (index >= FONT_MAX)
@@ -72,6 +78,7 @@ public:
 		return s_font_map[index];
 	}
 
+	// 添加图片到主题
 	static int add_image(IMAGE_LIST index, const void* image_info)
 	{
 		if (index >= IMAGE_MAX)
@@ -83,6 +90,7 @@ public:
 		return 0;
 	}
 
+	// 获取主题中指定图片
 	static const void* get_image(IMAGE_LIST index)
 	{
 		if (index >= IMAGE_MAX)
@@ -93,6 +101,7 @@ public:
 		return s_image_map[index];
 	}
 	
+	// 添加颜色到主题
 	static int add_color(COLOR_LIST index, const unsigned int color)
 	{
 		if (index >= COLOR_MAX)
@@ -104,6 +113,7 @@ public:
 		return 0;
 	}
 
+	// 获取主题中指定颜色
 	static const unsigned int get_color(COLOR_LIST index)
 	{
 		if (index >= COLOR_MAX)

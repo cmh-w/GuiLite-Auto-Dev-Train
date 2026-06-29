@@ -10,6 +10,7 @@
 #define  MAX_COL_NUM  30
 #define  MAX_ROW_NUM  30
 
+// 表格控件：支持行列设置和单元格内容显示
 class c_table: public c_wnd
 {
 public:
@@ -30,6 +31,7 @@ public:
 			m_col_width[i] = width;
 		}
 	}
+	// 设置指定行的高度
 	int set_row_height(unsigned int index, unsigned int height)
 	{
 		if (m_row_num > index)
@@ -39,6 +41,7 @@ public:
 		}
 		return -1;
 	}
+	// 设置指定列的宽度
 	int set_col_width(unsigned int index, unsigned int width)
 	{
 		if (m_col_num > index)
@@ -48,6 +51,7 @@ public:
 		}
 		return -1;
 	}
+	// 设置单元格内容和颜色
 	void set_item(int row, int col, char* str, unsigned int color)
 	{
 		draw_item(row, col, str, color);
@@ -55,6 +59,7 @@ public:
 
 	unsigned int get_row_num(){ return m_row_num;}
 	unsigned int get_col_num(){ return m_col_num;}
+	// 获取指定单元格的屏幕坐标矩形
 	c_rect get_item_rect(int row, int col)
 	{
 		static c_rect rect;
@@ -92,12 +97,14 @@ public:
 		return rect;
 	}
 protected:
+	// 表格预创建：初始化属性和字体
 	virtual void pre_create_wnd()
 	{
 		m_attr = (WND_ATTRIBUTION)(ATTR_VISIBLE);
 		m_font = c_theme::get_font(FONT_DEFAULT);
 		m_font_color = c_theme::get_color(COLOR_WND_FONT);
 	}
+	// 绘制单元格背景和文本内容
 	void draw_item(int row, int col, const char* str, unsigned int color)
 	{
 		c_rect rect = get_item_rect(row, col);

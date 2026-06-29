@@ -399,6 +399,8 @@
     <ClInclude Include="widgets\table.h" />
     <ClInclude Include="widgets\wave_buffer.h" />
     <ClInclude Include="widgets\wave_ctrl.h" />
+    <ClInclude Include="widgets\progress_bar.h" />
+    <ClInclude Include="widgets\wave_stat.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

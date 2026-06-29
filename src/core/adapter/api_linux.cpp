@@ -23,12 +23,14 @@
 
 static void(*do_assert)(const char* file, int line);
 static void(*do_log_out)(const char* log);
+// 注册调试函数：设置断言和日志输出的回调
 void register_debug_function(void(*my_assert)(const char* file, int line), void(*my_log_out)(const char* log))
 {
 	do_assert = my_assert;
 	do_log_out = my_log_out;
 }
 
+// 断言失败处理：输出错误信息并触发断言
 void _assert(const char* file, int line)
 {
 	if(do_assert)
@@ -41,6 +43,7 @@ void _assert(const char* file, int line)
 	} 
 }
 
+// 日志输出：将日志信息输出到回调或标准输出
 void log_out(const char* log)
 {
 	if (do_log_out)
@@ -56,26 +59,27 @@ void log_out(const char* log)
 
 typedef struct _timer_manage
 {
-    struct  _timer_info
-    {
-        int state; /* on or off */
-        int interval;
-        int elapse; /* 0~interval */
-        void (* timer_proc) (void* param);
+	struct  _timer_info
+	{
+		int state; /* on or off */
+		int interval;
+		int elapse; /* 0~interval */
+		void (* timer_proc) (void* param);
 		void* param;
-    }timer_info[MAX_TIMER_CNT];
+	}timer_info[MAX_TIMER_CNT];
 
-    void (* old_sigfunc)(int);
-    void (* new_sigfunc)(int);
+	void (* old_sigfunc)(int);
+	void (* new_sigfunc)(int);
 }_timer_manage_t;
 static struct _timer_manage timer_manage;
 
+// 定时器线程：循环检查各定时器的状态并触发回调
 static void* timer_routine(void*)
 {
-    int i;
-    while(true)
-    {
-    	for(i = 0; i < MAX_TIMER_CNT; i++)
+	int i;
+	while(true)
+	{
+		for(i = 0; i < MAX_TIMER_CNT; i++)
 		{
 			if(timer_manage.timer_info[i].state == 0)
 			{
@@ -88,11 +92,12 @@ static void* timer_routine(void*)
 				timer_manage.timer_info[i].timer_proc(timer_manage.timer_info[i].param);
 			}
 		}
-    	usleep(1000 * TIMER_UNIT);
-    }
-    return NULL;
+		usleep(1000 * TIMER_UNIT);
+	}
+	return NULL;
 }
 
+// 初始化定时器管理器：创建定时器线程（仅执行一次）
 static int init_mul_timer()
 {
 	static bool s_is_init = false;
@@ -100,50 +105,52 @@ static int init_mul_timer()
 	{
 		return 0;
 	}
-    memset(&timer_manage, 0, sizeof(struct _timer_manage));
-    pthread_t pid;
-    pthread_create(&pid, NULL, timer_routine, NULL);
-    s_is_init = true;
-    return 1;
+	memset(&timer_manage, 0, sizeof(struct _timer_manage));
+	pthread_t pid;
+	pthread_create(&pid, NULL, timer_routine, NULL);
+	s_is_init = true;
+	return 1;
 }
 
+// 设置单个定时器：注册定时回调及间隔时间
 static int set_a_timer(int interval, void (* timer_proc)(void* param), void* param)
 {
 	init_mul_timer();
 
 	int i;
-    if(timer_proc == NULL || interval <= 0)
-    {
-        return (-1);
-    }
+	if(timer_proc == NULL || interval <= 0)
+	{
+		return (-1);
+	}
 
-    for(i = 0; i < MAX_TIMER_CNT; i++)
-    {
-        if(timer_manage.timer_info[i].state == 1)
-        {
-            continue;
-        }
-        memset(&timer_manage.timer_info[i], 0, sizeof(timer_manage.timer_info[i]));
-        timer_manage.timer_info[i].timer_proc = timer_proc;
+	for(i = 0; i < MAX_TIMER_CNT; i++)
+	{
+		if(timer_manage.timer_info[i].state == 1)
+		{
+			continue;
+		}
+		memset(&timer_manage.timer_info[i], 0, sizeof(timer_manage.timer_info[i]));
+		timer_manage.timer_info[i].timer_proc = timer_proc;
 		timer_manage.timer_info[i].param = param;
-        timer_manage.timer_info[i].interval = interval;
-        timer_manage.timer_info[i].elapse = 0;
-        timer_manage.timer_info[i].state = 1;
-        break;
-    }
+		timer_manage.timer_info[i].interval = interval;
+		timer_manage.timer_info[i].elapse = 0;
+		timer_manage.timer_info[i].state = 1;
+		break;
+	}
 
-    if(i >= MAX_TIMER_CNT)
-    {
-    	ASSERT(false);
-        return (-1);
-    }
-    return (i);
+	if(i >= MAX_TIMER_CNT)
+	{
+		ASSERT(false);
+		return (-1);
+	}
+	return (i);
 }
 
 typedef void (*EXPIRE_ROUTINE)(void* arg);
 EXPIRE_ROUTINE s_expire_function;
 static c_fifo s_real_timer_fifo;
 
+// 实时定时器消费线程：读取FIFO数据并触发到期回调
 static void* real_timer_routine(void*)
 {
 	char dummy;
@@ -161,6 +168,7 @@ static void* real_timer_routine(void*)
 	return 0;
 }
 
+// 实时定时器到期处理：向FIFO写入信号
 static void expire_real_timer(int sigo)
 {
 	char dummy = 0x33;
@@ -170,6 +178,7 @@ static void expire_real_timer(int sigo)
 	}
 }
 
+// 启动实时定时器：注册信号处理器及定时器线程
 void start_real_timer(void (*func)(void* arg))
 {
 	if(NULL == func)
@@ -193,21 +202,25 @@ void start_real_timer(void (*func)(void* arg))
 	}
 }
 
+// 获取当前线程ID
 unsigned int get_cur_thread_id()
 {
 	return (unsigned long)pthread_self();
 }
 
+// 注册定时器：将毫秒间隔转换为定时器单元并注册
 void register_timer(int milli_second,void func(void* param), void* param)
 {
 	set_a_timer(milli_second/TIMER_UNIT,func, param);
 }
 
+// 获取当前时间（秒数）
 long get_time_in_second()
 {
 	return time(NULL);         /* + 8*60*60*/
 }
 
+// 获取本地时间：返回年/月/日/时/分/秒
 T_TIME get_time()
 {
 	T_TIME ret = {0};
@@ -225,6 +238,7 @@ T_TIME get_time()
 	return ret;
 }
 
+// 秒数转时间结构：将秒数转换为完整时间格式
 T_TIME second_to_day(long second)
 {
 	T_TIME ret = {0};
@@ -239,11 +253,13 @@ T_TIME second_to_day(long second)
 	return ret;
 }
 
+// 创建线程：封装pthread_create接口
 void create_thread(unsigned long* thread_id, void* attr, void *(*start_routine) (void *), void* arg)
 {
-    pthread_create((pthread_t*)thread_id, (pthread_attr_t const*)attr, start_routine, arg);
+	pthread_create((pthread_t*)thread_id, (pthread_attr_t const*)attr, start_routine, arg);
 }
 
+// 线程睡眠：毫秒级延时
 void thread_sleep(unsigned int milli_seconds)
 {
 	usleep(milli_seconds * 1000);
@@ -274,6 +290,7 @@ typedef struct{
 	unsigned int 	biBlueMask;
 }__attribute__((packed))Infohead;
 
+// 构建BMP图像文件：将RGB565像素数据写入文件
 int build_bmp(const char *filename, unsigned int width, unsigned int height, unsigned char *data)
 {
 	FileHead bmp_head;
@@ -324,6 +341,7 @@ int build_bmp(const char *filename, unsigned int width, unsigned int height, uns
 	return 0;
 }
 
+// FIFO构造函数：初始化读写指针和同步对象
 c_fifo::c_fifo()
 {
 	m_head = m_tail = 0;
@@ -334,6 +352,7 @@ c_fifo::c_fifo()
 	pthread_mutex_init((pthread_mutex_t*)m_write_mutex, 0);
 }
 
+// FIFO读取：从缓冲区读取指定字节数
 int c_fifo::read(void* buf, int len)
 {
 	unsigned char* pbuf = (unsigned char*)buf;
@@ -356,6 +375,7 @@ int c_fifo::read(void* buf, int len)
 	return i;
 }
 
+// FIFO写入：将数据写入缓冲区（满时返回0并告警）
 int c_fifo::write(void* buf, int len)
 {
 	unsigned char* pbuf = (unsigned char*)buf;

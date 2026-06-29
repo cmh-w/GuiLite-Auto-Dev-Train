@@ -7,11 +7,13 @@
 #include "../core/display.h"
 #include "../core/theme.h"
 
+// 按钮控件：支持Normal/Focused/Pushed三种状态及点击回调
 class c_button : public c_wnd
 {
 public:
 	void set_on_click(WND_CALLBACK on_click) { this->on_click = on_click; }
 protected:
+	// 绘制按钮：根据状态切换背景色和文字样式
 	virtual void on_paint()
 	{
 		c_rect rect;
@@ -46,16 +48,19 @@ protected:
 			break;
 		}
 	}
+	// 处理获得焦点事件
 	virtual void on_focus()
 	{
 		m_status = STATUS_FOCUSED;
 		on_paint();
 	}
+	// 处理失去焦点事件
 	virtual void on_kill_focus()
 	{
 		m_status = STATUS_NORMAL;
 		on_paint();
 	}
+	// 按钮预创建：初始化属性和字体
 	virtual void pre_create_wnd()
 	{
 		on_click = 0;
@@ -63,7 +68,7 @@ protected:
 		m_font = c_theme::get_font(FONT_DEFAULT);
 		m_font_color = c_theme::get_color(COLOR_WND_FONT);
 	}
-
+	// 处理触摸事件：按下/抬起切换状态并触发回调
 	virtual void on_touch(int x, int y, TOUCH_ACTION action)
 	{
 		if (action == TOUCH_DOWN)
@@ -82,6 +87,7 @@ protected:
 			}
 		}
 	}
+	// 处理导航按键事件
 	virtual void on_navigate(NAVIGATION_KEY key)
 	{
 		switch (key)

@@ -7,6 +7,7 @@
 class c_wnd;
 class c_surface;
 
+// 窗口属性枚举
 typedef enum
 {
 	ATTR_VISIBLE	= 0x40000000L,
@@ -14,6 +15,7 @@ typedef enum
 	ATTR_PRIORITY	= 0x10000000L// Handle touch action at high priority
 }WND_ATTRIBUTION;
 
+// 窗口状态枚举
 typedef enum
 {
 	STATUS_NORMAL,
@@ -22,6 +24,7 @@ typedef enum
 	STATUS_DISABLED
 }WND_STATUS;
 
+// 导航键枚举
 typedef enum
 {
 	NAV_FORWARD,
@@ -29,12 +32,14 @@ typedef enum
 	NAV_ENTER
 }NAVIGATION_KEY;
 
+// 触摸动作枚举
 typedef enum
 {
 	TOUCH_DOWN,
 	TOUCH_UP
 }TOUCH_ACTION;
 
+// 窗口树结构体：用于描述窗口层级关系
 typedef struct struct_wnd_tree
 {
 	c_wnd*					p_wnd;//window instance
@@ -47,14 +52,19 @@ typedef struct struct_wnd_tree
 	struct struct_wnd_tree*	p_child_tree;//sub tree
 }WND_TREE;
 
+// 窗口回调函数指针类型
 typedef void (c_wnd::*WND_CALLBACK)(int, int);
 
+// 窗口类：GUI窗口基类，管理窗口层级结构和事件处理
 class c_wnd
 {
 public:
+	// 构造函数：初始化窗口属性
 	c_wnd() : m_status(STATUS_NORMAL), m_attr((WND_ATTRIBUTION)(ATTR_VISIBLE | ATTR_FOCUS)), m_parent(0), m_top_child(0), m_prev_sibling(0), m_next_sibling(0),
 		m_str(0), m_font_color(0), m_bg_color(0), m_id(0), m_z_order(Z_ORDER_LEVEL_0), m_focus_child(0), m_surface(0) {};
+	// 析构函数
 	virtual ~c_wnd() {};
+	// 连接窗口到父窗口：建立窗口层级关系
 	virtual int connect(c_wnd *parent, unsigned short resource_id, const char* str,
 		short x, short y, short width, short height, WND_TREE* p_child_tree = 0)
 	{
@@ -100,6 +110,7 @@ public:
 		return 0;
 	}
 
+	// 断开窗口连接：从父窗口移除并释放子窗口
 	void disconnect()
 	{
 		if (0 != m_top_child)
@@ -123,8 +134,11 @@ public:
 		m_attr = WND_ATTRIBUTION(0);
 	}
 
+	// 子窗口初始化回调
 	virtual void on_init_children() {}
+	// 窗口绘制回调
 	virtual void on_paint() {}
+	// 显示窗口及其子窗口
 	virtual void show_window()
 	{
 		if (ATTR_VISIBLE == (m_attr & ATTR_VISIBLE))
@@ -144,6 +158,7 @@ public:
 
 	unsigned short get_id() const { return m_id; }
 	int get_z_order() { return m_z_order; }
+	// 根据ID查找子窗口
 	c_wnd* get_wnd_ptr(unsigned short id) const
 	{
 		c_wnd* child = m_top_child;
@@ -164,6 +179,7 @@ public:
 
 	void set_str(const char* str) { m_str = str; }
 	void set_attr(WND_ATTRIBUTION attr) { m_attr = attr; }
+	// 判断窗口是否可获取焦点
 	bool is_focus_wnd() const
 	{
 		return ((m_attr & ATTR_VISIBLE) && (m_attr & ATTR_FOCUS)) ? true : false;
@@ -177,6 +193,7 @@ public:
 	const void* get_font_type() { return m_font; }
 	void get_wnd_rect(c_rect &rect) const {	rect = m_wnd_rect; }
 
+	// 获取窗口在屏幕上的绝对坐标矩形
 	void get_screen_rect(c_rect &rect) const
 	{
 		int l = 0;
@@ -185,6 +202,7 @@ public:
 		rect.set_rect(l, t, m_wnd_rect.width(), m_wnd_rect.height());
 	}
 
+	// 设置子窗口焦点
 	c_wnd* set_child_focus(c_wnd *focus_child)
 	{
 		ASSERT(0 != focus_child);
@@ -207,6 +225,7 @@ public:
 	}
 
 	c_wnd* get_parent() const { return m_parent; }
+	// 获取最后一个子窗口
 	c_wnd* get_last_child() const
 	{
 		if (0 == m_top_child)
@@ -223,6 +242,7 @@ public:
 
 		return child;
 	}
+	// 从子窗口链表中移除指定子窗口
 	int	unlink_child(c_wnd *child)
 	{
 		if ((0 == child)
@@ -288,6 +308,7 @@ public:
 	c_wnd* get_prev_sibling() const { return m_prev_sibling; }
 	c_wnd* get_next_sibling() const { return m_next_sibling; }
 
+	// 搜索具有优先级的兄弟窗口
 	c_wnd* search_priority_sibling(c_wnd* root)
 	{
 		c_wnd* priority_wnd = 0;
@@ -304,6 +325,7 @@ public:
 		return priority_wnd;
 	}
 
+	// 触摸事件处理
 	virtual void on_touch(int x, int y, TOUCH_ACTION action)
 	{
 		x -= m_wnd_rect.m_left;
@@ -330,6 +352,7 @@ public:
 			child = child->m_next_sibling;
 		}
 	}
+	// 导航键事件处理
 	virtual void on_navigate(NAVIGATION_KEY key)
 	{
 		c_wnd* priority_wnd = search_priority_sibling(m_top_child);
@@ -394,7 +417,9 @@ public:
 	c_surface* get_surface() { return m_surface; }
 	void set_surface(c_surface* surface) { m_surface = surface; }
 protected:
+	// 窗口创建前预处理
 	virtual void pre_create_wnd() {};
+	// 添加子窗口到链表尾部
 	void add_child_2_tail(c_wnd *child)
 	{
 		if (0 == child)return;
@@ -419,6 +444,7 @@ protected:
 		}
 	}
 
+	// 窗口坐标转换为屏幕绝对坐标
 	void wnd2screen(int &x, int &y) const
 	{
 		c_wnd* parent = m_parent;
@@ -437,6 +463,7 @@ protected:
 		}
 	}
 
+	// 加载子窗口树
 	int load_child_wnd(WND_TREE *p_child_tree)
 	{
 		if (0 == p_child_tree)
@@ -456,7 +483,9 @@ protected:
 	}
 	void set_active_child(c_wnd* child) { m_focus_child = child; }
 
+	// 获取焦点回调
 	virtual void on_focus() {};
+	// 失去焦点回调
 	virtual void on_kill_focus() {};
 protected:
 	unsigned short	m_id;

@@ -9,9 +9,11 @@
 #define BUFFER_EMPTY	-1111
 #define BUFFER_FULL		-2222;
 
+// 波形数据缓冲区：循环存储波形采样数据
 class c_wave_buffer
 {
 public:
+	// 构造函数：初始化缓冲区索引和缓存
 	c_wave_buffer()
 	{
 		m_head = m_tail = m_min_old = m_max_old =
@@ -21,6 +23,7 @@ public:
 		memset(m_read_cache_mid, 0, sizeof(m_read_cache_mid));
 		memset(m_read_cache_max, 0, sizeof(m_read_cache_max));
 	}
+	// 写入一个波形采样数据
 	int write_wave_data(short data)
 	{
 		if ((m_tail + 1) % WAVE_BUFFER_LEN == m_head)
@@ -32,6 +35,7 @@ public:
 		m_tail = (m_tail + 1) % WAVE_BUFFER_LEN;
 		return 1;
 	}
+	// 按帧读取波形数据：返回最大值/最小值/中值
 	int read_wave_data_by_frame(short &max, short &min, short frame_len, unsigned int sequence, short offset)
 	{
 		if (m_refresh_sequence != sequence)
@@ -76,21 +80,24 @@ public:
 		m_max_old = tmp_max;
 		return (m_read_cache_mid[offset] = mid);
 	}
+	// 重置读取位置到最新数据
 	void reset()
 	{
 		m_head = m_tail;
 	}
-
+	// 清空缓冲区数据
 	void clear_data()
 	{
 		m_head = m_tail = 0;
 		memset(m_wave_buf, 0, sizeof(m_wave_buf));
 	}
+	// 获取缓冲区中有效数据个数
 	short get_cnt()
 	{
 		return (m_tail >= m_head) ? (m_tail - m_head) : (m_tail - m_head + WAVE_BUFFER_LEN);
 	}
 private:
+	// 从缓冲区读取一个数据
 	int read_data()
 	{
 		if (m_head == m_tail)

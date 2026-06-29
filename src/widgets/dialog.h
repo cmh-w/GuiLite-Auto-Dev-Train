@@ -10,15 +10,18 @@
 class c_surface;
 class c_dialog;
 
+// 对话框与surface关联结构体
 typedef struct
 {
 	c_dialog* 	dialog;
 	c_surface*	surface;
 } DIALOG_ARRAY;
 
+// 对话框控件：支持模态和非模态两种模式
 class c_dialog : public c_wnd
 {
 public:
+	// 打开对话框：支持模态/非模态模式
 	static int open_dialog(c_dialog* p_dlg, bool modal_mode = true)
 	{
 		if (0 == p_dlg)
@@ -46,7 +49,7 @@ public:
 		p_dlg->set_me_the_dialog();
 		return 1;
 	}
-
+	// 关闭指定surface关联的对话框
 	static int close_dialog(c_surface* surface)
 	{
 		c_dialog* dlg = get_the_dialog(surface);
@@ -71,7 +74,7 @@ public:
 		ASSERT(false);
 		return -1;
 	}
-
+	// 获取指定surface的当前对话框
 	static c_dialog* get_the_dialog(c_surface* surface)
 	{
 		for (int i = 0; i < SURFACE_CNT_MAX; i++)
@@ -84,12 +87,14 @@ public:
 		return 0;
 	}
 protected:
+	// 对话框预创建：设置默认Z序和背景色
 	virtual void pre_create_wnd()
 	{
 		m_attr = WND_ATTRIBUTION(0);// no focus/visible
 		m_z_order = Z_ORDER_LEVEL_1;
 		m_bg_color = GL_RGB(33, 42, 53);
 	}
+	// 绘制对话框背景和标题文字
 	virtual void on_paint()
 	{
 		c_rect rect;
@@ -102,6 +107,7 @@ protected:
 		}
 	}
 private:
+	// 将自身注册为当前对话框
 	int set_me_the_dialog()
 	{
 		c_surface* surface = get_surface();

@@ -9,15 +9,22 @@
 #define VALUE_STR_LEN	16
 
 class c_surface;
+// 字体操作抽象基类
 class c_font_operator
 {
 public:
+	// 绘制字符串
 	virtual void draw_string(c_surface* surface, int z_order, const void* string, int x, int y, const void* font, unsigned int font_color, unsigned int bg_color) = 0;
+	// 在矩形区域内绘制字符串
 	virtual void draw_string_in_rect(c_surface* surface, int z_order, const void* string, c_rect rect, const void* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT) = 0;
+	// 绘制数值
 	virtual void draw_value(c_surface* surface, int z_order, int value, int dot_position, int x, int y, const void* font, unsigned int font_color, unsigned int bg_color) = 0;
+	// 在矩形区域内绘制数值
 	virtual void draw_value_in_rect(c_surface* surface, int z_order, int value, int dot_position, c_rect rect, const void* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT) = 0;
+	// 获取字符串尺寸
 	virtual int get_str_size(const void* string, const void* font, int& width, int& height) = 0;
 
+	// 根据对齐方式计算字符串位置
 	void get_string_pos(const void* string, const void* font, c_rect rect, unsigned int align_type, int& x, int& y)
 	{
 		int x_size, y_size;
@@ -74,9 +81,11 @@ public:
 	}
 };
 
+// 点阵字体操作实现类
 class c_lattice_font_op : public c_font_operator
 {
 public:
+	// 绘制字符串
 	void draw_string(c_surface* surface, int z_order, const void* string, int x, int y, const void* font, unsigned int font_color, unsigned int bg_color)
 	{
 		const char* s = (const char*)string;
@@ -94,6 +103,7 @@ public:
 		}
 	}
 
+	// 在矩形区域内绘制字符串
 	void draw_string_in_rect(c_surface* surface, int z_order, const void* string, c_rect rect, const void* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT)
 	{
 		const char* s = (const char*)string;
@@ -106,6 +116,7 @@ public:
 		draw_string(surface, z_order, string, rect.m_left + x, rect.m_top + y, font, font_color, bg_color);
 	}
 
+	// 绘制数值
 	void draw_value(c_surface* surface, int z_order, int value, int dot_position, int x, int y, const void* font, unsigned int font_color, unsigned int bg_color)
 	{
 		char buf[VALUE_STR_LEN];
@@ -113,6 +124,7 @@ public:
 		draw_string(surface, z_order, buf, x, y, (const LATTICE_FONT_INFO*)font, font_color, bg_color);
 	}
 
+	// 在矩形区域内绘制数值
 	void draw_value_in_rect(c_surface* surface, int z_order, int value, int dot_position, c_rect rect, const void* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT)
 	{
 		char buf[VALUE_STR_LEN];
@@ -120,6 +132,7 @@ public:
 		draw_string_in_rect(surface, z_order, buf, rect, (const LATTICE_FONT_INFO*)font, font_color, bg_color, align_type);
 	}
 
+	// 获取字符串尺寸
 	int get_str_size(const void *string, const void* font, int& width, int& height)
 	{
 		const char* s = (const char*)string;
@@ -144,6 +157,7 @@ public:
 		return 0;
 	}
 private:
+	// 将数值转换为字符串（支持小数点位）
 	void value_2_string(int value, int dot_position, char* buf, int len)
 	{
 		memset(buf, 0, len);
@@ -167,6 +181,7 @@ private:
 		}
 	}
 
+	// 绘制单个字符
 	int draw_single_char(c_surface* surface, int z_order, unsigned int utf8_code, int x, int y, const LATTICE_FONT_INFO* font, unsigned int font_color, unsigned int bg_color)
 	{
 		unsigned int error_color = 0xFFFFFFFF;
@@ -199,6 +214,7 @@ private:
 		return len;
 	}
 
+	// 绘制点阵数据
 	void draw_lattice(c_surface* surface, int z_order, int x, int y, int width, int height, const unsigned char* p_data, unsigned int font_color, unsigned int bg_color)
 	{
 		unsigned int r, g, b, rgb;
@@ -237,6 +253,7 @@ private:
 		}
 	}
 	
+	// 二分查找指定UTF-8码对应的点阵
 	const LATTICE* get_lattice(const LATTICE_FONT_INFO* font, unsigned int utf8_code)
 	{
 		int first = 0;
@@ -260,6 +277,7 @@ private:
 		return 0;
 	}
 	
+	// 解析UTF-8编码，获取Unicode码点和字节长度
 	static int get_utf8_code(const char* s, unsigned int& output_utf8_code)
 	{
 		static unsigned char s_utf8_length_table[256] =
@@ -306,29 +324,35 @@ private:
 	}
 };
 
+// 文字渲染静态接口类
 class c_word
 {
 public:
+	// 绘制字符串
 	static void draw_string(c_surface* surface, int z_order, const void* string, int x, int y, const void* font, unsigned int font_color, unsigned int bg_color)//string: char or wchar_t
 	{
 		fontOperator->draw_string(surface, z_order, string, x, y, font, font_color, bg_color);
 	}
 
+	// 在矩形区域内绘制字符串
 	static void draw_string_in_rect(c_surface* surface, int z_order, const void* string, c_rect rect, const void* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT)//string: char or wchar_t
 	{
 		fontOperator->draw_string_in_rect(surface, z_order, string, rect, font, font_color, bg_color, align_type);
 	}
 
+	// 在矩形区域内绘制数值
 	static void draw_value_in_rect(c_surface* surface, int z_order, int value, int dot_position, c_rect rect, const void* font, unsigned int font_color, unsigned int bg_color, unsigned int align_type = ALIGN_LEFT)
 	{
 		fontOperator->draw_value_in_rect(surface, z_order, value, dot_position, rect, font, font_color, bg_color, align_type);
 	}
 
+	// 绘制数值
 	static void draw_value(c_surface* surface, int z_order, int value, int dot_position, int x, int y, const void* font, unsigned int font_color, unsigned int bg_color)
 	{
 		fontOperator->draw_value(surface, z_order, value, dot_position, x, y, font, font_color, bg_color);
 	}
 	
+	// 获取字符串尺寸
 	static int get_str_size(const void* string, const void* font, int& width, int& height)
 	{
 		return fontOperator->get_str_size(string, font, width, height);

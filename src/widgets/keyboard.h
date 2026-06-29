@@ -33,18 +33,21 @@
 #define ON_KEYBORAD_UPDATE(func)  \
 {MSG_TYPE_WND, KEYBORAD_CLICK, 0,  msgCallback(&func)},
 
+// 键盘大小写状态枚举
 typedef enum
 {
 	STATUS_UPPERCASE,
 	STATUS_LOWERCASE
 }KEYBOARD_STATUS;
 
+// 键盘样式枚举：全键盘/数字键盘
 typedef enum
 {
 	STYLE_ALL_BOARD,
 	STYLE_NUM_BOARD
 }KEYBOARD_STYLE;
 
+// 键盘点击结果状态枚举
 typedef enum
 {
 	CLICK_CHAR,
@@ -54,10 +57,12 @@ typedef enum
 
 extern WND_TREE g_key_board_children[];
 extern WND_TREE g_number_board_children[];
+// 键盘控件：支持全键盘和数字键盘两种模式
 class c_keyboard: public c_wnd
 {
 public:
 	c_keyboard() { m_attr = WND_ATTRIBUTION(0); }
+	// 打开键盘：根据样式定位并显示
 	int open_keyboard(c_wnd *user, unsigned short resource_id, KEYBOARD_STYLE style, WND_CALLBACK on_click)
 	{
 		c_rect user_rect;
@@ -85,13 +90,13 @@ public:
 		show_window();
 		return 0;
 	}
-
+	// 关闭键盘并释放图层
 	void close_keyboard()
 	{
 		c_wnd::disconnect();
 		m_surface->activate_layer(c_rect(), m_z_order);//inactivate the layer of keyboard by empty rect.
 	}
-	
+	// 初始化子控件：为所有按钮绑定点击回调
 	virtual void on_init_children()
 	{
 		c_wnd* child = m_top_child;
@@ -108,6 +113,7 @@ public:
 	KEYBOARD_STATUS get_cap_status(){return m_cap_status;}
 	char* get_str() { return m_str; }
 protected:
+	// 键盘预创建：设置焦点和Z序
 	virtual void pre_create_wnd()
 	{
 		m_attr = (WND_ATTRIBUTION)(ATTR_VISIBLE | ATTR_FOCUS | ATTR_PRIORITY);
@@ -116,13 +122,14 @@ protected:
 		memset(m_str, 0, sizeof(m_str));
 		m_str_len = 0;
 	}
+	// 绘制键盘背景
 	virtual void on_paint()
 	{
 		c_rect rect;
 		get_screen_rect(rect);
 		m_surface->fill_rect(rect, GL_RGB(0, 0, 0), m_z_order);
 	}
-
+	// 键盘按键点击分发处理
 	void on_key_clicked(int id, int param)
 	{
 		switch (id)
@@ -144,6 +151,7 @@ protected:
 			break;
 		}
 	}
+	// 处理字符键点击
 	void on_char_clicked(int id, int param)
 	{//id = char ascii code.
 		if (m_str_len >= sizeof(m_str))
@@ -169,6 +177,7 @@ protected:
 		m_str[m_str_len++] = id;
 		(m_parent->*(m_on_click))(m_id, CLICK_CHAR);
 	}
+	// 处理删除键点击
 	void on_del_clicked(int id, int param)
 	{
 		if (m_str_len <= 0)
@@ -178,16 +187,19 @@ protected:
 		m_str[--m_str_len] = 0;
 		(m_parent->*(m_on_click))(m_id, CLICK_CHAR);
 	}
+	// 处理大小写切换键点击
 	void on_caps_clicked(int id, int param)
 	{
 		m_cap_status = (m_cap_status == STATUS_LOWERCASE) ? STATUS_UPPERCASE : STATUS_LOWERCASE;
 		show_window();
 	}
+	// 处理确认键点击
 	void on_enter_clicked(int id, int param)
 	{
 		memset(m_str, 0, sizeof(m_str));
 		(m_parent->*(m_on_click))(m_id, CLICK_ENTER);
 	}
+	// 处理取消键点击
 	void on_esc_clicked(int id, int param)
 	{
 		memset(m_str, 0, sizeof(m_str));
@@ -200,9 +212,11 @@ private:
 	WND_CALLBACK m_on_click;
 };
 
+// 键盘按钮控件：绘制各按键文字
 class c_keyboard_button : public c_button
 {
 protected:
+	// 绘制键盘按钮：根据按键ID显示对应文字
 	virtual void on_paint()
 	{
 		c_rect rect;

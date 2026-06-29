@@ -12,12 +12,13 @@
 #define MAX_ITEM_NUM			4
 #define ITEM_HEIGHT				45
 
+// 列表框控件：支持列表选择和展开
 class c_list_box : public c_wnd
 {
 public:
 	void set_on_change(WND_CALLBACK on_change) { this->on_change = on_change; }
 	short get_item_count() { return m_item_total; }
-
+	// 添加列表项
 	int add_item(char* str)
 	{
 		if (m_item_total >= MAX_ITEM_NUM)
@@ -29,12 +30,14 @@ public:
 		update_list_size();
 		return 0;
 	}
+	// 清空所有列表项
 	void clear_item()
 	{
 		m_selected_item = m_item_total = 0;
 		memset(m_item_array, 0, sizeof(m_item_array));
 		update_list_size();
 	}
+	// 选中指定索引的列表项
 	void  select_item(short index)
 	{
 		if (index < 0 || index >= m_item_total)
@@ -45,6 +48,7 @@ public:
 	}
 	
 protected:
+	// 列表框预创建：初始化属性和数组
 	virtual void pre_create_wnd()
 	{
 		m_attr = (WND_ATTRIBUTION)(ATTR_VISIBLE | ATTR_FOCUS);
@@ -54,7 +58,7 @@ protected:
 		m_font = c_theme::get_font(FONT_DEFAULT);
 		m_font_color = c_theme::get_color(COLOR_WND_FONT);
 	}
-
+	// 绘制列表框：根据状态切换显示
 	virtual void on_paint()
 	{
 		c_rect rect;
@@ -102,16 +106,19 @@ protected:
 			ASSERT(false);
 		}
 	}
+	// 处理获得焦点事件
 	virtual void on_focus()
 	{
 		m_status = STATUS_FOCUSED;
 		on_paint();
 	}
+	// 处理失去焦点事件
 	virtual void on_kill_focus()
 	{
 		m_status = STATUS_NORMAL;
 		on_paint();
 	}
+	// 处理导航按键：上下选择/确认
 	virtual void on_navigate(NAVIGATION_KEY key)
 	{
 		switch (key)
@@ -143,12 +150,14 @@ protected:
 			return show_list();
 		}
 	}
+	// 处理触摸事件
 	virtual void on_touch(int x, int y, TOUCH_ACTION action)
 	{
 		(action == TOUCH_DOWN) ? on_touch_down(x, y) : on_touch_up(x, y);
 	}
 	
 private:
+	// 更新展开列表的尺寸
 	void update_list_size()
 	{
 		m_list_wnd_rect = m_wnd_rect;
@@ -159,6 +168,7 @@ private:
 		m_list_screen_rect.m_top = m_list_screen_rect.m_bottom + 1;
 		m_list_screen_rect.m_bottom = m_list_screen_rect.m_top + m_item_total * ITEM_HEIGHT;
 	}
+	// 绘制展开的全部列表项
 	void show_list()
 	{
 		//draw all items
@@ -182,6 +192,7 @@ private:
 			}
 		}
 	}
+	// 处理触摸按下
 	void on_touch_down(int x, int y)
 	{
 		if (m_wnd_rect.pt_in_rect(x, y))
@@ -208,6 +219,7 @@ private:
 			}
 		}
 	}
+	// 处理触摸抬起
 	void on_touch_up(int x, int y)
 	{
 		if (STATUS_FOCUSED == m_status)

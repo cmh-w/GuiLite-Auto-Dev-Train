@@ -8,10 +8,11 @@
 
 #define MAX_PAGES	5
 class c_gesture;
+// 页面滑动组控件：支持多页面左右滑动切换
 class c_slide_group : public c_wnd {
 public:
 	inline c_slide_group();
-
+	// 激活指定索引的页面
 	int set_active_slide(int index, bool is_redraw = true)
 	{
 		if (index >= MAX_PAGES || index < 0)
@@ -51,6 +52,7 @@ public:
 	c_wnd* get_slide(int index){return m_slides[index];}
 	c_wnd* get_active_slide(){return m_slides[m_active_slide_index];}
 	int get_active_slide_index(){return m_active_slide_index;}
+	// 添加新页面到滑动组
 	int add_slide(c_wnd* slide, unsigned short resource_id, short x, short y, short width, short height, WND_TREE* p_child_tree = 0, Z_ORDER_LEVEL max_zorder =  Z_ORDER_LEVEL_0)
 	{
 		if (0 == slide)
@@ -93,6 +95,7 @@ public:
 		ASSERT(false);
 		return -3;
 	}
+	// 禁用所有页面的图层
 	void disabel_all_slide()
 	{
 		for (int i = 0; i < MAX_PAGES; i++)
@@ -104,6 +107,7 @@ public:
 		}
 	}
 	inline virtual void on_touch(int x, int y, TOUCH_ACTION action);
+	// 处理导航按键事件
 	virtual void on_navigate(NAVIGATION_KEY key)
 	{
 		if (m_slides[m_active_slide_index])
@@ -127,6 +131,7 @@ typedef enum {
 }TOUCH_STATE;
 
 class c_slide_group;
+// 手势识别处理器：检测左右滑动操作
 class c_gesture {
 public:
 	c_gesture(c_slide_group* group)
@@ -135,6 +140,7 @@ public:
 		m_state = TOUCH_IDLE;
 		m_down_x = m_down_y = m_move_x = m_move_y = 0;
 	}
+	// 处理滑动手势：识别按下/移动/抬起
 	bool handle_swipe(int x, int y, TOUCH_ACTION action)
 	{
 		if (action == TOUCH_DOWN)//MOUSE_LBUTTONDOWN
@@ -167,6 +173,7 @@ public:
 	}
 
 private:
+	// 处理滑动移动过程中的页面跟随
 	bool on_move(int x)
 	{
 		if (m_slide_group == 0)
@@ -190,6 +197,7 @@ private:
 		}
 		return false;
 	}
+	// 处理滑动结束时的页面切换
 	bool on_swipe(int x)
 	{
 		if (m_slide_group == 0)
@@ -222,6 +230,7 @@ private:
 		}
 		return false;
 	}
+	// 执行左滑动画
 	int swipe_left()
 	{
 		if (m_slide_group == 0)
@@ -256,7 +265,7 @@ private:
 		}
 		return (index + 1);
 	}
-
+	// 执行右滑动画
 	int swipe_right()
 	{
 		if (m_slide_group == 0)
@@ -291,6 +300,7 @@ private:
 		}
 		return (index - 1);
 	}
+	// 左移过程中的页面跟随显示
 	void move_left()
 	{
 		int index = m_slide_group->get_active_slide_index();
@@ -309,6 +319,7 @@ private:
 			s1->get_display()->swipe_surface(s2, s1, rc.m_left, rc.m_right, rc.m_top, rc.m_bottom, (m_down_x - m_move_x));
 		}
 	}
+	// 右移过程中的页面跟随显示
 	void move_right()
 	{
 		int index = m_slide_group->get_active_slide_index();
