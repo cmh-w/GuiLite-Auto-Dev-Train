@@ -21,25 +21,23 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake ../src -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+          cmake ../src -DCMAKE_POLICY_MINIMUM_VERSION=3.5
 
-      - name: 编译并捕获全部警告日志
+      - name: 编译并捕获警告日志
         run: |
           cd build
           make -j4 2> warn.log
         continue-on-error: false
 
-      # 将编译警告上报到页面Annotations面板展示
-      - name: 页面输出C++编译警告
-        if: exists('build/warn.log')
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const warnPath = 'build/warn.log';
-            if (fs.existsSync(warnPath)) {
-              const warnContent = fs.readFileSync(warnPath, 'utf8');
-              if (warnContent.trim()) {
-                core.warning(`【C++代码编译警告汇总】\n${warnContent}`);
-              }
-            }
+      # 读取警告并展示到页面提示区
+      - name: 展示C++编译警告
+        id: show_warn
+        run: |
+          if [ -s build/warn.log ]; then
+            echo "WARNING<<EOF" >> $GITHUB_ENV
+            cat build/warn.log >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          fi
+      - name: 输出警告至页面Annotations
+        if: env.WARNING != ''
+        run: echo "::warning file=src/widgets/widgets.cpp::$env.WARNING"
