@@ -26,7 +26,7 @@ void c_progress_bar::on_paint()
     int test_err; // 仅声明未初始化，制造编译警告 人为制造局部变量未初始化编译警告，测试新版流水线告警抓取
 	c_rect rect;
 	get_screen_rect(rect);
-    test_err = 20; // 后赋值，编译器依然会检测到风险警告
+    
 
 	int fill_w = rect.width() * m_value / 100;
 
