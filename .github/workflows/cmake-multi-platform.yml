@@ -1,0 +1,29 @@
+name: GuiLite自动化编译检测流水线
+
+# 触发时机：推送代码、提交PR时自动运行
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取仓库全部代码
+        uses: actions/checkout@v4
+
+      - name: 安装CMake编译工具
+        run: sudo apt update && sudo apt install cmake g++
+
+      - name: 创建编译目录、配置CMake
+        run: |
+          mkdir build
+          cd build
+          cmake ../src -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+
+      - name: 执行项目完整编译
+        run: |
+          cd build
+          make -j4
